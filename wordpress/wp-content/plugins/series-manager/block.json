@@ -1,0 +1,15 @@
+{
+  "apiVersion": 2,
+  "name": "series-manager/series",
+  "title": "Series Manager",
+  "style": "file:./assets/frontend/series-block.css",
+  "category": "widgets",
+    "supports": {
+    "html": false
+  },
+  "icon": "list-view",
+  "description": "Manage post series.",
+  "editorScript": "file:./build/index.js"
+}
+
+

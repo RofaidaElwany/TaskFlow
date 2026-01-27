@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.sm-series {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.sm-series h3 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  border-bottom: 2px solid #0073aa;
+  padding-bottom: 0.5rem;
+}
+
+.sm-series {
+  margin-bottom: 0.5rem;
+}
+.sm-series li {
+  list-style: none;
+}
+.sm-series li a {
+  font-weight: 200;
+  letter-spacing: -0.1px;
+  line-height: 1;
+}
+
+.sm-series li a:hover {
+  text-decoration: none;
+}
+
+.sm-series.is-current a:hover {
+  text-decoration: none;
+}
+.sm-series li.is-current {
+  list-style: none;
+}
+.sm-series li.is-current a {
+  font-weight: bold;
+  color: #000;
+  cursor: default;
+  text-decoration: none;
+}
+
+/* Navigation */
+.sm-series-nav {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  border-top: 1px solid #ddd;
+  padding-top: 1rem;
+}
+
+.sm-series-prev,
+.sm-series-next {
+  text-decoration: none;
+  font-weight: 600;
+  color: #0073aa;
+}
+
+.sm-series-prev:hover,
+.sm-series-next:hover {
+  text-decoration: underline;
+}
