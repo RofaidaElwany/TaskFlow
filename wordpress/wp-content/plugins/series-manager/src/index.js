@@ -1,5 +1,5 @@
 import { registerPlugin } from '@wordpress/plugins';
-import { PluginDocumentSettingPanel } from '@wordpress/edit-post';
+import { PluginDocumentSettingPanel } from '@wordpress/editor';
 import { PanelBody, SelectControl, Spinner } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useEffect } from '@wordpress/element';
@@ -14,18 +14,28 @@ const SeriesSidebar = () => {
         };
     }, []);
 
-    const [seriesTerms, setSeriesTerms] = useState([]);
     const [orderedPosts, setOrderedPosts] = useState([]);
     const selectedSeriesId = currentSeries[0] || null;
 
     const { editPost } = useDispatch('core/editor');
 
     /* =========================
-       Fetch all series terms
+       Fetch all series terms using useSelect
     ========================= */
-    useEffect(() => {
-        wp.data.select('core').getEntityRecords('taxonomy', 'series', { per_page: -1 })
-            .then((terms) => setSeriesTerms(terms || []));
+    const { seriesTerms, isResolvingTerms } = useSelect((select) => {
+        const core = select('core');
+        if (!core) {
+            return { seriesTerms: [], isResolvingTerms: false };
+        }
+
+        const queryArgs = ['taxonomy', 'series', { per_page: -1 }];
+        const records = core.getEntityRecords(...queryArgs);
+        const isResolving = core.isResolving('getEntityRecords', queryArgs);
+        
+        return {
+            seriesTerms: records || [],
+            isResolvingTerms: isResolving === true,
+        };
     }, []);
 
     /* =========================
@@ -37,36 +47,78 @@ const SeriesSidebar = () => {
             return;
         }
 
+        // Check if SMSeries is available
+        if (!window.SMSeries || !window.SMSeries.ajaxurl) {
+            console.error('SMSeries object not available. Make sure the script is properly localized.');
+            return;
+        }
+
         const formData = new URLSearchParams({
             action: 'sm_get_series_posts',
-            nonce: SMSeries.nonce,
+            nonce: window.SMSeries.nonce,
             term_id: selectedSeriesId,
         });
 
-        fetch(SMSeries.ajaxurl, {
+        fetch(window.SMSeries.ajaxurl, {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString(),
         })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                let posts = data.data;
-                // أضف الـ current post لو مش موجود
-                if (!posts.some(p => p.id === postId)) {
-                    posts.push({
-                        id: postId,
-                        title: { rendered: postTitle?.trim() || 'The current post' },
-                        isCurrent: true,
-                    });
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.text();
+        })
+        .then(text => {
+            try {
+                const data = JSON.parse(text);
+                if (data.success) {
+                    let posts = data.data || [];
+                    // If current post already exists, mark it as current (don't duplicate it).
+                    const currentId = Number(postId);
+                    const existingIndex = posts.findIndex((p) => Number(p?.id) === currentId);
+
+                    if (existingIndex !== -1) {
+                        posts = posts.map((p, idx) =>
+                            idx === existingIndex
+                                ? {
+                                      ...p,
+                                      isCurrent: true,
+                                      // prefer the edited title for the current post
+                                      title: {
+                                          rendered:
+                                              (postTitle?.trim && postTitle.trim()) ||
+                                              p?.title?.rendered ||
+                                              'Untitled',
+                                      },
+                                  }
+                                : p
+                        );
+                    } else {
+                        // Add current post only if it's not already in the ordered list
+                        posts.push({
+                            id: currentId,
+                            title: { rendered: (postTitle?.trim && postTitle.trim()) || 'The current post' },
+                            isCurrent: true,
+                        });
+                    }
+                    setOrderedPosts(posts);
+                } else {
+                    console.error('Error fetching posts:', data);
+                    setOrderedPosts([]);
                 }
-                setOrderedPosts(posts);
-            } else {
-                console.error('Error fetching posts:', data);
+            } catch (e) {
+                console.error('Error parsing JSON response:', e);
+                console.error('Response text:', text);
+                setOrderedPosts([]);
             }
         })
-        .catch(err => console.error('Error fetching posts:', err));
+        .catch(err => {
+            console.error('Error fetching posts:', err);
+            setOrderedPosts([]);
+        });
 
     }, [selectedSeriesId, postId, postTitle]);
 
@@ -96,19 +148,39 @@ const SeriesSidebar = () => {
     const saveOrderToDB = (posts) => {
         if (!selectedSeriesId) return;
 
+        // Check if SMSeries is available
+        if (!window.SMSeries || !window.SMSeries.ajaxurl) {
+            console.error('SMSeries object not available. Make sure the script is properly localized.');
+            return;
+        }
+
         const postIds = posts.map(p => p.id);
         const formData = new URLSearchParams({
             action: 'sm_update_series_order',
-            nonce: SMSeries.nonce,
+            nonce: window.SMSeries.nonce,
             term_id: selectedSeriesId,
             post_ids: postIds.join(','),
         });
 
-        fetch(SMSeries.ajaxurl, {
+        fetch(window.SMSeries.ajaxurl, {
             method: 'POST',
             credentials: 'same-origin',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString(),
+        })
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (!data.success) {
+                console.error('Error saving order:', data);
+            }
+        })
+        .catch(err => {
+            console.error('Error saving order:', err);
         });
     };
 
@@ -117,20 +189,23 @@ const SeriesSidebar = () => {
     ========================= */
     const seriesOptions = [
         { label: 'Select the series', value: '' },
-        ...seriesTerms.map(t => ({ label: t.name, value: t.id })),
+        ...(seriesTerms || []).map(t => ({ label: t.name, value: t.id })),
     ];
 
     return (
         <PluginDocumentSettingPanel name="sm-series-sidebar" title="Series Manager">
             <PanelBody>
-                {!seriesTerms.length && <Spinner />}
-                {seriesTerms.length > 0 && (
+                {isResolvingTerms && <Spinner />}
+                {!isResolvingTerms && seriesTerms && seriesTerms.length > 0 && (
                     <SelectControl
                         label="Series"
                         value={selectedSeriesId || ''}
                         options={seriesOptions}
                         onChange={onChangeSeries}
                     />
+                )}
+                {!isResolvingTerms && (!seriesTerms || seriesTerms.length === 0) && (
+                    <p>No series found. Create a series first.</p>
                 )}
 
                 {!orderedPosts.length && selectedSeriesId && <Spinner />}
@@ -154,4 +229,8 @@ const SeriesSidebar = () => {
     );
 };
 
-registerPlugin('sm-series-sidebar', { render: SeriesSidebar });
+// Prevent duplicate registration
+if (!window.smSeriesSidebarRegistered) {
+    registerPlugin('sm-series-sidebar', { render: SeriesSidebar });
+    window.smSeriesSidebarRegistered = true;
+}

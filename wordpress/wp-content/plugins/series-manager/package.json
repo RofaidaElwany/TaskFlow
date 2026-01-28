@@ -15,8 +15,5 @@
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.0"
-  },
-  "dependencies": {
-    "@wordpress/edit-post": "^8.37.0"
   }
 }

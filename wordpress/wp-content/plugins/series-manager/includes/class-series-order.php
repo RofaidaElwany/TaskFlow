@@ -79,46 +79,70 @@ class SM_Series_Order {
     }
 
     public static function ajax_update_order() {
+        // Verify user has permission
         if ( ! current_user_can('edit_posts') ) {
-            wp_send_json_error('No permission');
+            wp_send_json_error(['message' => 'No permission']);
+            return;
         }
 
-        check_ajax_referer('sm_series_nonce', 'nonce');
+        // Verify nonce
+        $nonce = $_POST['nonce'] ?? $_REQUEST['nonce'] ?? '';
+        if ( ! wp_verify_nonce( $nonce, 'sm_series_nonce' ) ) {
+            wp_send_json_error(['message' => 'Invalid nonce']);
+            return;
+        }
 
-        $term_id  = intval($_POST['term_id'] ?? 0);
-        $post_ids = array_map('intval', explode(',', $_POST['post_ids'] ?? ''));
+        // Get data from POST or REQUEST
+        $term_id  = intval($_POST['term_id'] ?? $_REQUEST['term_id'] ?? 0);
+        $post_ids_str = $_POST['post_ids'] ?? $_REQUEST['post_ids'] ?? '';
+        $post_ids = array_map('intval', array_filter(explode(',', $post_ids_str)));
 
         if ( ! $term_id || empty($post_ids) ) {
-            wp_send_json_error('Invalid data');
+            wp_send_json_error(['message' => 'Invalid data']);
+            return;
         }
 
         $term = get_term($term_id);
         if (!$term || is_wp_error($term)) {
-            wp_send_json_error('Invalid term');
+            wp_send_json_error(['message' => 'Invalid term']);
+            return;
         }
 
         self::update_order($term->term_taxonomy_id, $post_ids);
 
-        wp_send_json_success('Order updated successfully');
+        wp_send_json_success(['message' => 'Order updated successfully']);
     }
 
     public static function ajax_get_series_posts() {
+        // Verify user has permission
         if ( ! current_user_can('edit_posts') ) {
-            wp_send_json_error('No permission');
+            wp_send_json_error(['message' => 'No permission']);
+            return;
         }
 
-        check_ajax_referer('sm_series_nonce', 'nonce');
+        // Verify nonce
+        $nonce = $_POST['nonce'] ?? $_REQUEST['nonce'] ?? '';
+        if ( ! wp_verify_nonce( $nonce, 'sm_series_nonce' ) ) {
+            wp_send_json_error(['message' => 'Invalid nonce']);
+            return;
+        }
 
-        $term_id = intval($_POST['term_id'] ?? 0);
+        // Get term_id from POST or REQUEST
+        $term_id = intval($_POST['term_id'] ?? $_REQUEST['term_id'] ?? 0);
 
         if (!$term_id) {
-            wp_send_json_error('Invalid term ID');
+            wp_send_json_error(['message' => 'Invalid term ID']);
+            return;
         }
 
         $term = get_term($term_id);
         if (!$term || is_wp_error($term)) {
-            wp_send_json_error('Term not found');
+            wp_send_json_error(['message' => 'Term not found']);
+            return;
         }
+
+        // Ensure the term_order column exists
+        self::ensure_term_order_column();
 
         $posts = self::get_ordered_posts($term->term_taxonomy_id);
 

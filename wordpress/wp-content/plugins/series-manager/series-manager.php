@@ -16,11 +16,13 @@ require_once __DIR__ . '/includes/class-series-taxonomy-edit.php';
 require_once __DIR__ . '/includes/class-series-order.php';
 require_once __DIR__ . '/includes/class-series-block-render.php';
 
+// Register AJAX handlers early (before admin_init)
+SM_Series_Order::register();
+
 function sm_register_everything()
 {
     SM_Series_Taxonomy::register();
     SM_Series_Taxonomy_Edit::register();
-    SM_Series_Order::register();  
 
     register_block_type(
         __DIR__,
@@ -35,30 +37,48 @@ add_action('init', 'sm_register_everything');
 function sm_enqueue_post_editor_assets() {
     $screen = get_current_screen();
 
-    if ( ! $screen || $screen->base !== 'post' ) {
+    // Check if we're in the block editor (post edit screen)
+    if ( ! $screen || ( $screen->base !== 'post' && $screen->base !== 'site-editor' ) ) {
         return;
     }
 
-    $asset_file = include plugin_dir_path( __FILE__ ) . 'build/index.asset.php';
+    // Only enqueue for post types that support series
+    if ( $screen->post_type && ! in_array( $screen->post_type, ['post', 'page'] ) ) {
+        return;
+    }
 
+    $asset_file_path = plugin_dir_path( __FILE__ ) . 'build/index.asset.php';
+    
+    if ( ! file_exists( $asset_file_path ) ) {
+        return;
+    }
+
+    $asset_file = include $asset_file_path;
+
+    $script_handle = 'sm-series-post-editor';
+    
     wp_enqueue_script(
-        'sm-series-post-editor',
+        $script_handle,
         plugins_url( 'build/index.js', __FILE__ ),
-        $asset_file['dependencies'],
-        $asset_file['version'],
+        $asset_file['dependencies'] ?? ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data'],
+        $asset_file['version'] ?? filemtime( plugin_dir_path( __FILE__ ) . 'build/index.js' ),
         true
     );
 
-    wp_enqueue_style(
-        'sm-series-post-editor',
-        plugins_url( 'build/index.css', __FILE__ ),
-        [],
-        $asset_file['version']
-    );
+    // Only enqueue CSS if the file exists
+    $css_file_path = plugin_dir_path( __FILE__ ) . 'build/index.css';
+    if ( file_exists( $css_file_path ) ) {
+        wp_enqueue_style(
+            'sm-series-post-editor',
+            plugins_url( 'build/index.css', __FILE__ ),
+            [],
+            $asset_file['version'] ?? filemtime( $css_file_path )
+        );
+    }
 
-    // Localize BEFORE the script runs
+    // Localize the script with AJAX data
     wp_localize_script(
-        'sm-series-post-editor',
+        $script_handle,
         'SMSeries',
         [
             'nonce'   => wp_create_nonce( 'sm_series_nonce' ),
@@ -66,22 +86,8 @@ function sm_enqueue_post_editor_assets() {
         ]
     );
 }
-add_action( 'admin_enqueue_scripts', 'sm_enqueue_post_editor_assets' );
+add_action( 'enqueue_block_editor_assets', 'sm_enqueue_post_editor_assets' );
 
-// Localize block editor script with nonce and ajaxurl
-add_action('wp_enqueue_scripts', function() {
-    // Localize the block editor script
-    if (wp_script_is('wp-block-series-manager-series', 'enqueued')) {
-        wp_localize_script(
-            'wp-block-series-manager-series',
-            'SMSeries',
-            [
-                'nonce' => wp_create_nonce('sm_series_nonce'),
-                'ajaxurl' => admin_url('admin-ajax.php'),
-            ]
-        );
-    }
-});
 
 
 // Enqueue front-end styles
