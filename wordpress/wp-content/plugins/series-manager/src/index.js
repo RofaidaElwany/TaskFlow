@@ -3,6 +3,8 @@ import { PluginDocumentSettingPanel } from '@wordpress/editor';
 import { PanelBody, SelectControl, Spinner } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useEffect } from '@wordpress/element';
+import './index.css';
+
 
 const SeriesSidebar = () => {
     const { postId, postTitle, currentSeries } = useSelect((select) => {
@@ -218,6 +220,16 @@ const SeriesSidebar = () => {
                                 onDragStart={(e) => onDragStart(e, index)}
                                 onDragOver={onDragOver}
                                 onDrop={(e) => onDrop(e, index)}
+                                className={`
+                                    font-mono
+                                    text-sm
+                                    px-3 py-2
+                                    rounded-md
+                                    border
+                                    cursor-move
+                                    bg-[#e6e9f1]
+                                    ${post.isCurrent ? 'bg-blue-50 border-blue-300 font-semibold' : 'border-gray-200'}
+                                `}
                             >
                                 {post.title?.rendered || 'Untitled'}
                             </li>
