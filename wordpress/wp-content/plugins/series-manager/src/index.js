@@ -228,7 +228,7 @@ const SeriesSidebar = () => {
                                     border
                                     cursor-move
                                     bg-[#e6e9f1]
-                                    ${post.isCurrent ? 'bg-blue-50 border-blue-300 font-semibold' : 'border-gray-200'}
+                                    ${post.isCurrent ? 'bg-[#99c9ef] border-blue-100 font-semibold' : 'border-gray-200'}
                                 `}
                             >
                                 {post.title?.rendered || 'Untitled'}
