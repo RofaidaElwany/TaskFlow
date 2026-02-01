@@ -16,6 +16,7 @@ require_once __DIR__ . '/includes/class-series-taxonomy-edit.php';
 require_once __DIR__ . '/includes/class-series-order.php';
 require_once __DIR__ . '/includes/class-series-block-render.php';
 
+
 // Register AJAX handlers early (before admin_init)
 SM_Series_Order::register();
 

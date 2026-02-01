@@ -199,12 +199,34 @@ const SeriesSidebar = () => {
             <PanelBody>
                 {isResolvingTerms && <Spinner />}
                 {!isResolvingTerms && seriesTerms && seriesTerms.length > 0 && (
-                    <SelectControl
-                        label="Series"
+                    <div>
+                        <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
+                        Series
+                    </label>
+                    <select
                         value={selectedSeriesId || ''}
-                        options={seriesOptions}
-                        onChange={onChangeSeries}
-                    />
+                        onChange={(e) => onChangeSeries(e.target.value)}
+                        className="w-full
+                                    bg-white border 
+                                    border-gray-300
+                                    rounded-md py-2
+                                    px-3
+                                    text-sm 
+                                    focus:ring-1 
+                                    focus:ring-[#197fe6] 
+                                    focus:border-[#197fe6] 
+                                    outline-none 
+                                    cursor-pointer"
+                    >
+                        <option value="">Select the series</option>
+                        {seriesTerms.map((term) => (
+                            <option key={term.id} value={term.id}>
+                                {term.name}
+                            </option>
+                        ))}
+                    </select>
+                    </div>
+                    
                 )}
                 {!isResolvingTerms && (!seriesTerms || seriesTerms.length === 0) && (
                     <p>No series found. Create a series first.</p>
@@ -212,9 +234,12 @@ const SeriesSidebar = () => {
 
                 {!orderedPosts.length && selectedSeriesId && <Spinner />}
                 {orderedPosts.length > 0 && (
-                    <ul className="sm-series-posts">
+                    <ul 
+                    className=
+                    'flex flex-col list-none p-0 mt-4 border-t border-gray-100 pt-4 gap-2'>
                         {orderedPosts.map((post, index) => (
                             <li
+                                
                                 key={post.id}
                                 draggable
                                 onDragStart={(e) => onDragStart(e, index)}
@@ -222,15 +247,25 @@ const SeriesSidebar = () => {
                                 onDrop={(e) => onDrop(e, index)}
                                 className={`
                                     font-mono
-                                    text-sm
+                                    text-sm 
                                     px-3 py-2
-                                    rounded-md
-                                    border
-                                    cursor-move
+                                    rounded-md border
+                                    border-gray-200
                                     bg-[#e6e9f1]
-                                    ${post.isCurrent ? 'bg-[#99c9ef] border-blue-100 font-semibold' : 'border-gray-200'}
+                                    cursor-grab active:cursor-grabbing select-none
+                                    transition-all
+                                    duration-200
+                                    hover:bg-[#d8dce6]
+                                    hover:shadow-sm 
+                                    hover:-translate-y-[1px] 
+                                    flex
+                                    items-center
+                                    gap-2 group
+                                    ${post.isCurrent ? 
+                                        'border-blue-200 bg-blue-200 font-semibold text-blue-900 hover:bg-blue-200' : 'border-gray-200'}
                                 `}
                             >
+                                <span class="material-symbols-outlined text-blue-400 text-lg select-none group-hover:text-blue-600"></span>
                                 {post.title?.rendered || 'Untitled'}
                             </li>
                         ))}
