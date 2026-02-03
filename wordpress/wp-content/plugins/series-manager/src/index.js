@@ -1,8 +1,8 @@
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginDocumentSettingPanel } from '@wordpress/editor';
-import { PanelBody, Spinner } from '@wordpress/components';
+import { PanelBody, Spinner, Modal, Button } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
-import { useState, useEffect } from '@wordpress/element';
+import { useState, useEffect,createPortal } from '@wordpress/element';
 import './index.css';
 
 /* =========================
@@ -13,7 +13,8 @@ import {
   closestCenter,
   PointerSensor,
   useSensor,
-  useSensors
+  useSensors,
+  DragOverlay // 🔹 ADDED
 } from '@dnd-kit/core';
 
 import {
@@ -26,32 +27,127 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 
 /* =========================
-   SortableItem Component for each post
+   SortableItem Component
 ========================= */
-const SortableItem = ({ id, post }) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+const SortableItem = ({ id, post, onDelete }) => {
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    cursor: isDragging ? 'grabbing' : 'grab',
-    opacity: isDragging ? 0.8 : 1,
+    opacity: isDragging ? 0.4 : 1, // 🔹 slight fade
+  };
+
+  const handleDeleteClick = (e) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setIsConfirmModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    setIsConfirmModalOpen(false);
+    onDelete && onDelete(post);
   };
 
   return (
-    <li
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={`font-mono text-sm px-3 py-2 rounded-md border flex items-center gap-2 select-none transition-all duration-200
-                  ${post.isCurrent ? 
-                    'border-blue-200 bg-blue-200 font-semibold text-blue-900' : 
-                    'border-gray-200 bg-[#e6e9f1] hover:bg-[#d8dce6]'}`}
-    >
-      <span className="material-symbols-outlined text-blue-400 text-lg"></span>
-      {post.title?.rendered || 'Untitled'}
-    </li>
+    <>
+      <li
+        ref={setNodeRef}
+        style={style}
+        className={`flex
+                    items-center
+                    p-2  
+                    hover:bg-gray-100 
+                    dark:hover:bg-gray-900/30
+                    font-semibold
+
+    
+          ${post.isCurrent
+            ? 'p-0 rounded bg-blue-100 dark:bg-blue-900/20 border-l-4 border-blue-600 text-gray-900 dark:text-gray-100'
+            : ' text-gray-600 dark:text-gray-300 flex-grow'}`}
+      >
+        <span
+          className="material-symbols-outlined text-gray-400 text-lg"
+          {...attributes}
+          {...listeners}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
+          drag_indicator
+        </span>
+
+        <span className="flex-1">
+          {post.title?.rendered || 'Untitled'}
+        </span>
+
+        <button
+          type="button"
+          onClick={handleDeleteClick}
+          className="ml-2 p-1 text-gray-400 hover:text-gray-600 transition-colors relative group"
+          title=""
+    
+        >
+          <span className="material-symbols-outlined text-sm">close</span>
+          <span className="absolute
+                            bottom-full left-1/2 -translate-x-3/4
+                            mb-2 px-2 py-1 
+                            bg-gray-800 
+                            text-white 
+                            text-xs 
+                            rounded 
+                            whitespace-nowrap 
+                            opacity-0 
+                            group-hover:opacity-100 
+                            transition-opacity 
+                            pointer-events-none z-10">
+            Remove from series
+            <span className="absolute -bottom-1 left-3/4 -translate-x-full w-2 h-2 bg-gray-800 rotate-45 pointer-events-none" />
+          </span>
+        </button>
+      </li>
+        
+      {isConfirmModalOpen && createPortal (
+        //modal for delete confirmation
+        <div className="fixed inset-0 z-[100] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-[#1e1e1e] w-full max-w-[360px] rounded-lg shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+            <div className="px-6 pt-6 pb-2">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                            Remove from Series
+                        </h3>
+          </div>
+            <div className="px-6 pb-6 pt-2">
+              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                Are you sure you want to remove <span className="font-bold text-gray-900 dark:text-gray-100"> {post.title?.rendered || 'Untitled'}</span> from the series?
+              </p>
+            </div>
+              <div className="px-6 py-4 bg-gray-50 dark:bg-[#1e1e1e] flex justify-end items-center gap-3">
+                <button 
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  onClick={() => setIsConfirmModalOpen(false)}
+                  variant="secondary"
+                >
+                  Cancel
+                </button>
+                <button class="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded shadow-sm transition-colors"
+                  onClick={handleConfirmDelete}
+                  variant="destructive"
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+        </div>,
+        document.body
+    )}
+    </>
   );
 };
 
@@ -59,9 +155,6 @@ const SortableItem = ({ id, post }) => {
    SeriesSidebar Plugin
 ========================= */
 const SeriesSidebar = () => {
-  /* =========================
-     Fetch post and series info
-  ========================= */
   const { postId, postTitle, currentSeries } = useSelect((select) => {
     const editor = select('core/editor');
     return {
@@ -71,40 +164,34 @@ const SeriesSidebar = () => {
     };
   }, []);
 
-  const [orderedPosts, setOrderedPosts] = useState([]);
   const selectedSeriesId = currentSeries[0] || null;
   const { editPost } = useDispatch('core/editor');
 
+  const [orderedPosts, setOrderedPosts] = useState([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [pendingPostToRemove, setPendingPostToRemove] = useState(null);
+
+  const [activePost, setActivePost] = useState(null); // 🔹 ADDED
+
   /* =========================
-     Fetch all series terms using useSelect
+     Fetch series terms
   ========================= */
   const { seriesTerms, isResolvingTerms } = useSelect((select) => {
     const core = select('core');
-    if (!core) {
-      return { seriesTerms: [], isResolvingTerms: false };
-    }
-
-    const queryArgs = ['taxonomy', 'series', { per_page: -1 }];
-    const records = core.getEntityRecords(...queryArgs);
-    const isResolving = core.isResolving('getEntityRecords', queryArgs);
+    const args = ['taxonomy', 'series', { per_page: -1 }];
 
     return {
-      seriesTerms: records || [],
-      isResolvingTerms: isResolving === true,
+      seriesTerms: core.getEntityRecords(...args) || [],
+      isResolvingTerms: core.isResolving('getEntityRecords', args),
     };
   }, []);
 
   /* =========================
-     Fetch posts for selected series via AJAX
+     Fetch posts
   ========================= */
   useEffect(() => {
     if (!selectedSeriesId) {
       setOrderedPosts([]);
-      return;
-    }
-
-    if (!window.SMSeries || !window.SMSeries.ajaxurl) {
-      console.error('SMSeries object not available. Make sure the script is properly localized.');
       return;
     }
 
@@ -116,73 +203,47 @@ const SeriesSidebar = () => {
 
     fetch(window.SMSeries.ajaxurl, {
       method: 'POST',
-      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString(),
     })
-    .then(res => res.ok ? res.text() : Promise.reject(`HTTP ${res.status}`))
-    .then(text => {
-      try {
-        const data = JSON.parse(text);
-        if (data.success) {
-          let posts = data.data || [];
-          const currentId = Number(postId);
-          const existingIndex = posts.findIndex((p) => Number(p?.id) === currentId);
+      .then(res => res.json())
+      .then(({ success, data }) => {
+        if (!success) return;
 
-          if (existingIndex !== -1) {
-            posts = posts.map((p, idx) =>
-              idx === existingIndex
-                ? {
-                    ...p,
-                    isCurrent: true,
-                    title: {
-                      rendered: (postTitle?.trim && postTitle.trim()) || p?.title?.rendered || 'Untitled',
-                    },
-                  }
-                : p
-            );
-          } else {
-            posts.push({
-              id: currentId,
-              title: { rendered: (postTitle?.trim && postTitle.trim()) || 'The current post' },
-              isCurrent: true,
-            });
-          }
-          setOrderedPosts(posts);
-        } else {
-          console.error('Error fetching posts:', data);
-          setOrderedPosts([]);
+        const currentId = Number(postId);
+        let posts = data || [];
+
+        const exists = posts.find(p => Number(p.id) === currentId);
+
+        if (!exists) {
+          posts.push({
+            id: currentId,
+            title: { rendered: postTitle || 'Current post' },
+            isCurrent: true,
+          });
         }
-      } catch (e) {
-        console.error('Error parsing JSON response:', e);
-        console.error('Response text:', text);
-        setOrderedPosts([]);
-      }
-    })
-    .catch(err => {
-      console.error('Error fetching posts:', err);
-      setOrderedPosts([]);
-    });
 
+        setOrderedPosts(posts);
+      });
   }, [selectedSeriesId, postId, postTitle]);
 
-  /* =========================
-     Change series
-  ========================= */
   const onChangeSeries = (seriesId) => {
     editPost({ series: seriesId ? [Number(seriesId)] : [] });
   };
 
   /* =========================
-     DnD Kit Sensors
+     DnD sensors
   ========================= */
   const sensors = useSensors(useSensor(PointerSensor));
 
-  /* =========================
-     Handle Drag End
-  ========================= */
+  const handleDragStart = (event) => { // 🔹 ADDED
+    const post = orderedPosts.find(p => p.id === event.active.id);
+    setActivePost(post);
+  };
+
   const handleDragEnd = (event) => {
     const { active, over } = event;
+    setActivePost(null); // 🔹 ADDED
 
     if (!over || active.id === over.id) return;
 
@@ -194,56 +255,46 @@ const SeriesSidebar = () => {
     saveOrderToDB(newPosts);
   };
 
+  const handleDragCancel = () => { // 🔹 ADDED
+    setActivePost(null);
+  };
+
   /* =========================
-     Save order to DB
+     Save order
   ========================= */
   const saveOrderToDB = (posts) => {
-    if (!selectedSeriesId) return;
-
-    if (!window.SMSeries || !window.SMSeries.ajaxurl) {
-      console.error('SMSeries object not available. Make sure the script is properly localized.');
-      return;
-    }
-
-    const postIds = posts.map(p => p.id);
     const formData = new URLSearchParams({
       action: 'sm_update_series_order',
       nonce: window.SMSeries.nonce,
       term_id: selectedSeriesId,
-      post_ids: postIds.join(','),
+      post_ids: posts.map(p => p.id).join(','),
     });
 
     fetch(window.SMSeries.ajaxurl, {
       method: 'POST',
-      credentials: 'same-origin',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData.toString(),
-    })
-    .then(res => res.ok ? res.json() : Promise.reject(`HTTP ${res.status}`))
-    .then(data => {
-      if (!data.success) {
-        console.error('Error saving order:', data);
-      }
-    })
-    .catch(err => console.error('Error saving order:', err));
+    });
   };
 
   /* =========================
-     Series Options for dropdown
+     Handle delete post from series
   ========================= */
-  const seriesOptions = [
-    { label: 'Select the series', value: '' },
-    ...(seriesTerms || []).map(t => ({ label: t.name, value: t.id })),
-  ];
+  const handleDeletePost = (postToDelete) => {
+    const updatedPosts = orderedPosts.filter(p => p.id !== postToDelete.id);
+    setOrderedPosts(updatedPosts);
+    saveOrderToDB(updatedPosts);
+  };
 
   /* =========================
-     JSX Render
+     Render
   ========================= */
   return (
     <PluginDocumentSettingPanel name="sm-series-sidebar" title="Series Manager">
       <PanelBody>
         {isResolvingTerms && <Spinner />}
-        {!isResolvingTerms && seriesTerms && seriesTerms.length > 0 && (
+
+        {!isResolvingTerms && seriesTerms?.length > 0 && (
           <div>
             <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
               Series
@@ -251,10 +302,10 @@ const SeriesSidebar = () => {
             <select
               value={selectedSeriesId || ''}
               onChange={(e) => onChangeSeries(e.target.value)}
-              className="w-full bg-white border border-gray-300 rounded-md py-2 px-3 text-sm focus:ring-1 focus:ring-[#197fe6] focus:border-[#197fe6] outline-none cursor-pointer"
+              className="w-full bg-white border border-gray-300 rounded-md py-2 px-1 text-sm"
             >
               <option value="">Select the series</option>
-              {seriesTerms.map((term) => (
+              {seriesTerms.map(term => (
                 <option key={term.id} value={term.id}>
                   {term.name}
                 </option>
@@ -262,31 +313,47 @@ const SeriesSidebar = () => {
             </select>
           </div>
         )}
-        {!isResolvingTerms && (!seriesTerms || seriesTerms.length === 0) && (
-          <p>No series found. Create a series first.</p>
-        )}
-
-        {!orderedPosts.length && selectedSeriesId && <Spinner />}
 
         {orderedPosts.length > 0 && (
-          /* =========================
-             DnD Kit Context Wrapper
-          ========================= */
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}   // 🔹 ADDED
             onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel} // 🔹 ADDED
           >
             <SortableContext
               items={orderedPosts.map(p => p.id)}
               strategy={verticalListSortingStrategy}
             >
-              <ul className='flex flex-col list-none p-0 mt-4 border-t border-gray-100 pt-4 gap-2'>
-                {orderedPosts.map((post) => (
-                  <SortableItem key={post.id} id={post.id} post={post} />
-                ))}
-              </ul>
+              <div>
+                
+                <label className="block text-xs font-bold uppercase text-gray-500 mb-1 pt-4">
+                  POSTS IN SERIES
+                </label>
+                <ul className="flex flex-col list-none p-0 mt-4 gap-2">
+                  {orderedPosts.map(post => (
+                    <SortableItem
+                      key={post.id}
+                      id={post.id}
+                      post={post}
+                      onDelete={handleDeletePost}
+                    />
+                  ))}
+                </ul>
+              </div>
             </SortableContext>
+
+            {/* 🔹 Drag Overlay */}
+            <DragOverlay adjustScale={false}>
+              {activePost && (
+                <li className="font-mono text-sm px-3 py-2 rounded-md border
+                               bg-blue-200 border-blue-300 shadow-lg
+                               cursor-grabbing">
+                  {activePost.title?.rendered || 'Untitled'}
+                </li>
+              )}
+            </DragOverlay>
           </DndContext>
         )}
       </PanelBody>
@@ -295,7 +362,7 @@ const SeriesSidebar = () => {
 };
 
 /* =========================
-   Prevent duplicate registration
+   Register plugin
 ========================= */
 if (!window.smSeriesSidebarRegistered) {
   registerPlugin('sm-series-sidebar', { render: SeriesSidebar });

@@ -35,45 +35,46 @@ function sm_register_everything()
 
 add_action('init', 'sm_register_everything');
 
-function sm_enqueue_post_editor_assets() {
+function sm_enqueue_post_editor_assets()
+{
     $screen = get_current_screen();
 
     // Check if we're in the block editor (post edit screen)
-    if ( ! $screen || ( $screen->base !== 'post' && $screen->base !== 'site-editor' ) ) {
+    if (! $screen || ($screen->base !== 'post' && $screen->base !== 'site-editor')) {
         return;
     }
 
     // Only enqueue for post types that support series
-    if ( $screen->post_type && ! in_array( $screen->post_type, ['post', 'page'] ) ) {
+    if ($screen->post_type && ! in_array($screen->post_type, ['post', 'page'])) {
         return;
     }
 
-    $asset_file_path = plugin_dir_path( __FILE__ ) . 'build/index.asset.php';
-    
-    if ( ! file_exists( $asset_file_path ) ) {
+    $asset_file_path = plugin_dir_path(__FILE__) . 'build/index.asset.php';
+
+    if (! file_exists($asset_file_path)) {
         return;
     }
 
     $asset_file = include $asset_file_path;
 
     $script_handle = 'sm-series-post-editor';
-    
+
     wp_enqueue_script(
         $script_handle,
-        plugins_url( 'build/index.js', __FILE__ ),
+        plugins_url('build/index.js', __FILE__),
         $asset_file['dependencies'] ?? ['wp-plugins', 'wp-edit-post', 'wp-element', 'wp-components', 'wp-data'],
-        $asset_file['version'] ?? filemtime( plugin_dir_path( __FILE__ ) . 'build/index.js' ),
+        $asset_file['version'] ?? filemtime(plugin_dir_path(__FILE__) . 'build/index.js'),
         true
     );
 
     // Only enqueue CSS if the file exists
-    $css_file_path = plugin_dir_path( __FILE__ ) . 'build/index.css';
-    if ( file_exists( $css_file_path ) ) {
+    $css_file_path = plugin_dir_path(__FILE__) . 'build/index.css';
+    if (file_exists($css_file_path)) {
         wp_enqueue_style(
             'sm-series-post-editor',
-            plugins_url( 'build/index.css', __FILE__ ),
+            plugins_url('build/index.css', __FILE__),
             [],
-            $asset_file['version'] ?? filemtime( $css_file_path )
+            $asset_file['version'] ?? filemtime($css_file_path)
         );
     }
 
@@ -82,12 +83,12 @@ function sm_enqueue_post_editor_assets() {
         $script_handle,
         'SMSeries',
         [
-            'nonce'   => wp_create_nonce( 'sm_series_nonce' ),
-            'ajaxurl' => admin_url( 'admin-ajax.php' ),
+            'nonce'   => wp_create_nonce('sm_series_nonce'),
+            'ajaxurl' => admin_url('admin-ajax.php'),
         ]
     );
 }
-add_action( 'enqueue_block_editor_assets', 'sm_enqueue_post_editor_assets' );
+add_action('enqueue_block_editor_assets', 'sm_enqueue_post_editor_assets');
 
 
 
@@ -126,4 +127,12 @@ function sm_append_series_to_content($content)
     return $content . $series_html;
 }
 
-
+// Enqueue Material Symbols font for both editor and front-end
+add_action('enqueue_block_assets', function () {
+    wp_enqueue_style(
+        'material-symbols',
+        'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined',
+        [],
+        null
+    );
+});

@@ -76,6 +76,55 @@ class SM_Series_Order {
     public static function register() {
         add_action('wp_ajax_sm_update_series_order', [__CLASS__, 'ajax_update_order']);
         add_action('wp_ajax_sm_get_series_posts', [__CLASS__, 'ajax_get_series_posts']);
+        add_action('wp_ajax_sm_remove_post_from_series', [__CLASS__, 'ajax_remove_post_from_series']);
+    }
+
+    public static function ajax_remove_post_from_series() {
+        // Verify user has permission
+        if ( ! current_user_can('edit_posts') ) {
+            wp_send_json_error(['message' => 'No permission']);
+            return;
+        }
+
+        // Verify nonce
+        $nonce = $_POST['nonce'] ?? $_REQUEST['nonce'] ?? '';
+        if ( ! wp_verify_nonce( $nonce, 'sm_series_nonce' ) ) {
+            wp_send_json_error(['message' => 'Invalid nonce']);
+            return;
+        }
+
+        $term_id = intval($_POST['term_id'] ?? $_REQUEST['term_id'] ?? 0);
+        $post_id = intval($_POST['post_id'] ?? $_REQUEST['post_id'] ?? 0);
+
+        if ( ! $term_id || ! $post_id ) {
+            wp_send_json_error(['message' => 'Invalid data']);
+            return;
+        }
+
+        $term = get_term($term_id);
+        if (!$term || is_wp_error($term)) {
+            wp_send_json_error(['message' => 'Invalid term']);
+            return;
+        }
+
+        // Remove the term relationship for this post
+        $removed = wp_remove_object_terms( $post_id, (int) $term_id, 'series' );
+
+        if ( is_wp_error( $removed ) ) {
+            wp_send_json_error(['message' => 'Error removing term']);
+            return;
+        }
+
+        // Also clean up term_order column if present
+        global $wpdb;
+        self::ensure_term_order_column();
+        $wpdb->delete(
+            $wpdb->term_relationships,
+            [ 'term_taxonomy_id' => (int) $term->term_taxonomy_id, 'object_id' => $post_id ],
+            [ '%d', '%d' ]
+        );
+
+        wp_send_json_success(['message' => 'Post removed from series']);
     }
 
     public static function ajax_update_order() {
