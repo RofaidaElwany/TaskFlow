@@ -96,16 +96,31 @@ add_action('enqueue_block_editor_assets', 'sm_enqueue_post_editor_assets');
 
 function sm_enqueue_front_assets()
 {
+    // Enqueue Inter font
     wp_enqueue_style(
-        'sm-series-style',
-        plugins_url('assets/frontend/series.css', __FILE__),
+        'inter-font',
+        'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',
         [],
-        filemtime(plugin_dir_path(__FILE__) . 'assets/frontend/series.css')
+        null
+    );
+
+    // Enqueue Material Symbols font
+    wp_enqueue_style(
+        'material-symbols-font',
+        'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap',
+        [],
+        null
+    );
+
+    // Enqueue compiled Tailwind styles
+    wp_enqueue_style(
+        'sm-series-frontend',
+        plugins_url('build/index.css', __FILE__),
+        [],
+        filemtime(plugin_dir_path(__FILE__) . 'build/index.css')
     );
 }
 add_action('wp_enqueue_scripts', 'sm_enqueue_front_assets');
-
-// Append series block to the end of post content
 add_filter('the_content', 'sm_append_series_to_content');
 
 function sm_append_series_to_content($content)

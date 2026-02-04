@@ -213,15 +213,21 @@ const SeriesSidebar = () => {
         const currentId = Number(postId);
         let posts = data || [];
 
+        posts = posts.map(p => ({
+          ...p,
+          isCurrent: Number(p.id) === currentId,
+        }));
+
         const exists = posts.find(p => Number(p.id) === currentId);
 
         if (!exists) {
           posts.push({
             id: currentId,
-            title: { rendered: postTitle || 'Current post' },
+            title: { rendered: postTitle || 'Untitled' },
             isCurrent: true,
           });
         }
+
 
         setOrderedPosts(posts);
       });
