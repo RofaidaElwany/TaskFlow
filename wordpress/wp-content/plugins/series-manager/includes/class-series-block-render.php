@@ -72,24 +72,13 @@ class SM_Series_Block_Render
                         <!-- Series title and part info -->
                         <div class="flex flex-col">
                             <h2 class="text-2xl font-bold text-gray-900 dark:text-white leading-tight">
-                                <?php echo esc_html($term->name); ?>
+                                Series: <?php echo esc_html($term->name); ?>
                             </h2>
                         </div>
                         <div class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-medium">
                             Part <?php echo intval($current_index + 1); ?> of <?php echo intval($total_posts); ?>
                         </div>
                     </div>
-
-                    <!-- Current post description -->
-                    <div class="px-6 py-6 border-b border-gray-100 dark:border-gray-800">
-                        <h3 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                            <?php echo esc_html($post->post_title); ?>
-                        </h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed max-w-2xl">
-                            <?php echo wp_kses_post(wp_trim_words($post->post_excerpt ? $post->post_excerpt : $post->post_content, 30)); ?>
-                        </p>
-                    </div>
-
                     <!-- Series list -->
                     <div class="flex flex-col py-2">
                         <?php
@@ -133,7 +122,6 @@ class SM_Series_Block_Render
 
                     <!-- Navigation Footer -->
                     <div class="px-6 pb-6 pt-4 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/30">
-                        <h3 class="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Series Navigation</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <?php if ($prev_post) : ?>
                                 <a class="group flex items-center gap-4 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:border-primary/50 hover:shadow-md transition-all" href="<?php echo esc_url(get_permalink($prev_post)); ?>">
