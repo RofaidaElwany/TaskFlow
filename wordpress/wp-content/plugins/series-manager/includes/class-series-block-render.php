@@ -37,18 +37,31 @@ class SM_Series_Block_Render
         <div class="flex justify-center my-7">
             <?php
             foreach ($terms as $term) {
-                $posts = get_posts([
-                    'post_type'   => 'post',
-                    'numberposts' => -1,
-                    'tax_query'   => [
-                        [
-                            'taxonomy' => 'series',
-                            'terms'    => $term->term_id,
+                // Try to get posts ordered by the stored `term_order`.
+                $posts = [];
+                if (isset($term->term_taxonomy_id) && class_exists('SM_Series_Order')) {
+                    $ordered = SM_Series_Order::get_ordered_posts($term->term_taxonomy_id);
+                    if (! empty($ordered)) {
+                        $post_ids = wp_list_pluck($ordered, 'ID');
+                        $posts = array_map('get_post', $post_ids);
+                    }
+                }
+
+                // Fallback to date ordering if no term_order rows exist
+                if (empty($posts)) {
+                    $posts = get_posts([
+                        'post_type'   => 'post',
+                        'numberposts' => -1,
+                        'tax_query'   => [
+                            [
+                                'taxonomy' => 'series',
+                                'terms'    => $term->term_id,
+                            ],
                         ],
-                    ],
-                    'orderby' => 'date',
-                    'order'   => 'ASC',
-                ]);
+                        'orderby' => 'date',
+                        'order'   => 'ASC',
+                    ]);
+                }
 
                 if (empty($posts)) {
                     continue;
@@ -182,8 +195,3 @@ class SM_Series_Block_Render
         return ob_get_clean();
     }
 }
-
-
-
-
-

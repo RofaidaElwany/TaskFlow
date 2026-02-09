@@ -1,6 +1,6 @@
 import { registerPlugin } from '@wordpress/plugins';
 import { PluginDocumentSettingPanel } from '@wordpress/editor';
-import { PanelBody, Spinner, Modal, Button } from '@wordpress/components';
+import { PanelBody, Spinner, Modal, Button, ComboboxControl, TextControl } from '@wordpress/components';
 import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useEffect,createPortal } from '@wordpress/element';
 import './index.css';
@@ -14,7 +14,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay // 🔹 ADDED
+  DragOverlay 
 } from '@dnd-kit/core';
 
 import {
@@ -44,7 +44,7 @@ const SortableItem = ({ id, post, onDelete }) => {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1, // 🔹 slight fade
+    opacity: isDragging ? 0.4 : 1, 
   };
 
   const handleDeleteClick = (e) => {
@@ -68,15 +68,13 @@ const SortableItem = ({ id, post, onDelete }) => {
                     p-2  
                     hover:bg-gray-100 
                     dark:hover:bg-gray-900/30
-                    font-semibold
-
-    
+                    font-semibold    
           ${post.isCurrent
             ? 'p-0 rounded bg-blue-100 dark:bg-blue-900/20 border-l-4 border-blue-600 text-gray-900 dark:text-gray-100'
             : ' text-gray-600 dark:text-gray-300 flex-grow'}`}
       >
         <span
-          className="material-symbols-outlined text-gray-400 text-lg"
+          className="material-symbols-outlined text-gray-400 text-[16px]"
           {...attributes}
           {...listeners}
           style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
@@ -85,7 +83,7 @@ const SortableItem = ({ id, post, onDelete }) => {
         </span>
 
         <span className="flex-1">
-          {post.title?.rendered || 'Untitled'}
+          {post.title?.rendered || 'Current Post'}
         </span>
 
         <button
@@ -95,7 +93,7 @@ const SortableItem = ({ id, post, onDelete }) => {
           title=""
     
         >
-          <span className="material-symbols-outlined text-sm">close</span>
+          <span className="material-symbols-outlined text-[16px]!important">close</span>
           <span className="absolute
                             bottom-full left-1/2 -translate-x-3/4
                             mb-2 px-2 py-1 
@@ -120,15 +118,27 @@ const SortableItem = ({ id, post, onDelete }) => {
           <div className="bg-white dark:bg-[#1e1e1e] w-full max-w-[360px] rounded-lg shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="px-6 pt-6 pb-2">
             <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                            Remove from Series
-                        </h3>
+              Remove from Series
+            </h3>
           </div>
             <div className="px-6 pb-6 pt-2">
-              <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                Are you sure you want to remove <span className="font-bold text-gray-900 dark:text-gray-100"> {post.title?.rendered || 'Untitled'}</span> from the series?
+              <p className="text-sm 
+                            text-gray-600 
+                            dark:text-gray-400 
+                            leading-relaxed">
+                Are you sure you want to remove <span className="font-bold 
+                                                                text-gray-900 
+                                                                dark:text-gray-100"> 
+                {post.title?.rendered || 'Current Post'}</span> from the series?
               </p>
             </div>
-              <div className="px-6 py-4 bg-gray-50 dark:bg-[#1e1e1e] flex justify-end items-center gap-3">
+              <div className="px-6 py-4 
+                             bg-gray-50
+                             dark:bg-[#1e1e1e] 
+                             flex 
+                             justify-end 
+                             items-center 
+                             gap-3">
                 <button 
                   className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-transparent border border-gray-300 dark:border-gray-700 rounded hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                   onClick={() => setIsConfirmModalOpen(false)}
@@ -147,10 +157,12 @@ const SortableItem = ({ id, post, onDelete }) => {
         </div>,
         document.body
     )}
+
+    {/* New series modal moved to SeriesSidebar */}
+
     </>
   );
 };
-
 /* =========================
    SeriesSidebar Plugin
 ========================= */
@@ -166,12 +178,12 @@ const SeriesSidebar = () => {
 
   const selectedSeriesId = currentSeries[0] || null;
   const { editPost } = useDispatch('core/editor');
-
+  const [isNewSeriesModalOpen, setIsNewSeriesModalOpen] = useState(false);
+  const [newSeriesName, setNewSeriesName] = useState('');
   const [orderedPosts, setOrderedPosts] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [pendingPostToRemove, setPendingPostToRemove] = useState(null);
-
-  const [activePost, setActivePost] = useState(null); // 🔹 ADDED
+  const [activePost, setActivePost] = useState(null); 
 
   /* =========================
      Fetch series terms
@@ -194,7 +206,6 @@ const SeriesSidebar = () => {
       setOrderedPosts([]);
       return;
     }
-
     const formData = new URLSearchParams({
       action: 'sm_get_series_posts',
       nonce: window.SMSeries.nonce,
@@ -223,16 +234,13 @@ const SeriesSidebar = () => {
         if (!exists) {
           posts.push({
             id: currentId,
-            title: { rendered: postTitle || 'Untitled' },
+            title: { rendered: postTitle || 'Current Post' },
             isCurrent: true,
           });
         }
-
-
         setOrderedPosts(posts);
       });
   }, [selectedSeriesId, postId, postTitle]);
-
   const onChangeSeries = (seriesId) => {
     editPost({ series: seriesId ? [Number(seriesId)] : [] });
   };
@@ -241,7 +249,6 @@ const SeriesSidebar = () => {
      DnD sensors
   ========================= */
   const sensors = useSensors(useSensor(PointerSensor));
-
   const handleDragStart = (event) => { // 🔹 ADDED
     const post = orderedPosts.find(p => p.id === event.active.id);
     setActivePost(post);
@@ -255,7 +262,6 @@ const SeriesSidebar = () => {
 
     const oldIndex = orderedPosts.findIndex(p => p.id === active.id);
     const newIndex = orderedPosts.findIndex(p => p.id === over.id);
-
     const newPosts = arrayMove(orderedPosts, oldIndex, newIndex);
     setOrderedPosts(newPosts);
     saveOrderToDB(newPosts);
@@ -282,7 +288,26 @@ const SeriesSidebar = () => {
       body: formData.toString(),
     });
   };
-
+  /* =========================
+      Handle save order when adding new post to series
+  ========================= */
+  const { isSavingPost, isAutosavingPost } = useSelect(
+    (select) => ({
+      isSavingPost: select('core/editor').isSavingPost(),
+      isAutosavingPost: select('core/editor').isAutosavingPost(),
+    }),
+    []
+  );
+  useEffect(() => {
+    if (
+      isSavingPost &&
+      !isAutosavingPost &&
+      selectedSeriesId &&
+      orderedPosts.length
+    ) {
+      saveOrderToDB(orderedPosts);
+    }
+  }, [isSavingPost]);
   /* =========================
      Handle delete post from series
   ========================= */
@@ -293,80 +318,140 @@ const SeriesSidebar = () => {
   };
 
   /* =========================
+      add new series
+  ========================= */
+  
+  const createNewSeries = async () => {
+  const newTerm = await wp.data.dispatch('core').saveEntityRecord(
+    'taxonomy',
+    'series',
+    {
+      name: newSeriesName,
+    }
+  );
+
+  setIsNewSeriesModalOpen(false);
+  setNewSeriesName('');
+
+  if (newTerm?.id) {
+    onChangeSeries(newTerm.id);
+  }
+};
+
+  /* =========================
      Render
   ========================= */
   return (
     <PluginDocumentSettingPanel name="sm-series-sidebar" title="Series Manager">
       <PanelBody>
-        {isResolvingTerms && <Spinner />}
+        <div className="-mx-4">
+          {isResolvingTerms && <Spinner />}
 
-        {!isResolvingTerms && seriesTerms?.length > 0 && (
-          <div>
-            <label className="block text-xs font-bold uppercase text-gray-500 mb-1">
-              Series
-            </label>
-            <select
-              value={selectedSeriesId || ''}
-              onChange={(e) => onChangeSeries(e.target.value)}
-              className="w-full bg-white border border-gray-300 rounded-md py-2 px-1 text-sm"
-            >
-              <option value="">Select the series</option>
-              {seriesTerms.map(term => (
-                <option key={term.id} value={term.id}>
-                  {term.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
-
-        {orderedPosts.length > 0 && (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}   // 🔹 ADDED
-            onDragEnd={handleDragEnd}
-            onDragCancel={handleDragCancel} // 🔹 ADDED
-          >
-            <SortableContext
-              items={orderedPosts.map(p => p.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div>
-                
-                <label className="block text-xs font-bold uppercase text-gray-500 mb-1 pt-4">
-                  POSTS IN SERIES
-                </label>
-                <ul className="flex flex-col list-none p-0 mt-4 gap-2">
-                  {orderedPosts.map(post => (
-                    <SortableItem
-                      key={post.id}
-                      id={post.id}
-                      post={post}
-                      onDelete={handleDeletePost}
-                    />
-                  ))}
-                </ul>
+          {!isResolvingTerms && seriesTerms?.length > 0 && (
+            <div>
+              <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
+                Series
+              </label>
+              <div className="sm-series-combo">
+                <ComboboxControl
+                  value={selectedSeriesId ? String(selectedSeriesId) : ''}
+                  options={[
+                    { value: '', label: 'Select the series' },
+                    ...seriesTerms.map(t => ({ value: String(t.id), label: t.name })),
+                  ]}
+                  onChange={(val) => {
+                      onChangeSeries(val);
+                  }}
+                />
               </div>
-            </SortableContext>
+              {/* Always-visible action below combobox so user doesn't need to scroll */}
+              <div className="sm-new-series-action-container">
+                <button
+                  type="button"
+                  className="sm-new-series-action"
+                  onClick={() => {
+                    setNewSeriesName('');
+                    setIsNewSeriesModalOpen(true);
+                  }}
+                >
+                  + New Series
+                </button>
+              </div>
+              {isNewSeriesModalOpen && (
+                <Modal
+                  title="Add new series"
+                  onRequestClose={() => setIsNewSeriesModalOpen(false)}
+                >
+                  <TextControl
+                    label="Series name"
+                    value={newSeriesName}
+                    onChange={setNewSeriesName}
+                  />
 
-            {/* 🔹 Drag Overlay */}
-            <DragOverlay adjustScale={false}>
-              {activePost && (
-                <li className="font-mono text-sm px-3 py-2 rounded-md border
-                               bg-blue-200 border-blue-300 shadow-lg
-                               cursor-grabbing">
-                  {activePost.title?.rendered || 'Untitled'}
-                </li>
+                  <div className="mt-4">
+                    <Button
+                      variant="primary"
+                      onClick={createNewSeries}
+                      disabled={!newSeriesName}
+                    >
+                      ADD
+                    </Button>
+                  </div>
+                </Modal>
               )}
-            </DragOverlay>
-          </DndContext>
-        )}
+            </div>
+          )}
+          {orderedPosts.length > 0 && (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}   
+              onDragEnd={handleDragEnd}
+              onDragCancel={handleDragCancel} 
+            >
+              <SortableContext
+                items={orderedPosts.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div>
+                  <label className="block text-xs font-bold uppercase text-gray-500 mb-1 pt-4">
+                    POSTS IN SERIES
+                  </label>
+                  <ul className="flex flex-col list-none p-0 mt-4 gap-2">
+                    {orderedPosts.map(post => (
+                      <SortableItem
+                        key={post.id}
+                        id={post.id}
+                        post={post}
+                        onDelete={handleDeletePost}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              </SortableContext>
+              {/* 🔹 Drag Overlay */}
+              <DragOverlay adjustScale={false}>
+                {activePost && (
+                  <li className="font-mono 
+                                  text-sm 
+                                  px-3 py-2 
+                                  rounded-md 
+                                  border
+                                bg-blue-200 
+                                border-blue-300 
+                                shadow-lg
+                                cursor-grabbing">
+                    {activePost.title?.rendered || 'Current Post'}
+                  </li>
+                )}
+              </DragOverlay>
+            </DndContext>
+          )}
+        </div>
       </PanelBody>
     </PluginDocumentSettingPanel>
   );
 };
-
 /* =========================
    Register plugin
 ========================= */

@@ -22,13 +22,34 @@
 
   /* Material Symbols icon sizing */
   .material-symbols-outlined {
-    @apply text-[1.25rem];
-    font-variation-settings:
-      "FILL" 0,
-      "wght" 400;
+    font-size: 18px !important;
+  }
+
+  .components-button.is-primary:disabled {
+    @apply text-white !important;
+  }
+
+  /* ADD button text font */
+  .components-button.is-primary {
+    font-family: 'Poppins', sans-serif !important;
   }
 }
 
-
-
-
+/* Visible new series action below control */
+.sm-new-series-action-container {
+  margin-top: 0.5rem;
+}
+.sm-new-series-action {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #2563eb;
+  font-weight: 600;
+}
+.sm-new-series-action:hover {
+  background: #eff6ff;
+}
