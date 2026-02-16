@@ -1,0 +1,13 @@
+{
+    "name": "rofai/series-manager",
+    "type": "project",
+    "license": "GPL-2.0-or-later",
+    "require-dev": {
+        "phpunit/phpunit": "^11.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "SeriesManager\\": "include/"
+        }
+    }
+}

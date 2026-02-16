@@ -1,0 +1,31 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Build files
+dist/
+build/
+
+# Environment files
+.env
+.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
+# Node modules
+node_modules/
+package-lock.json
+package.json
+
+# Composer
+vendor/
+composer.lock
+
+# Build / temporary files
+build/
+dist/
+*.log
+*.tmp
+
