@@ -11,26 +11,34 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
+require_once __DIR__ . '/includes/Repository/SeriesRepository.php';
+require_once __DIR__ . '/includes/Service/SeriesService.php';
+require_once __DIR__ . '/includes/Helpers/SeriesFormatter.php';
+require_once __DIR__ . '/includes/Controller/SeriesController.php';
 require_once __DIR__ . '/includes/class-series-taxonomy.php';
 require_once __DIR__ . '/includes/class-series-taxonomy-edit.php';
-require_once __DIR__ . '/includes/class-series-order.php';
 require_once __DIR__ . '/includes/class-series-block-render.php';
-require_once 'includes/Repository/SeriesRepository.php';
-require_once 'includes/Service/SeriesService.php';
-require_once 'includes/Helpers/SeriesFormatter.php';
-require_once 'includes/Controller/SeriesController.php';
 
 
+/* ========= INIT FUNCTION ========= */
 
-global $wpdb;
+function sm_series_manager_init()
+{
 
-$repository = new SeriesRepository($wpdb);
-$service    = new SeriesService();
-$formatter  = new SeriesFormatter();
+    global $wpdb;
 
-new SeriesController($repository, $service, $formatter);
+    $repository = new SeriesRepository($wpdb);
+    $service    = new SeriesService();
+    $formatter  = new SeriesFormatter();
+
+    new SeriesController($repository, $service, $formatter);
+}
+
+/* ========= HOOK ========= */
+
+add_action('init', 'sm_series_manager_init');
 // Register AJAX handlers early (before admin_init)
-SM_Series_Order::register();
+// SM_Series_Order::register();
 
 function sm_register_everything()
 {
@@ -49,15 +57,16 @@ add_action('init', 'sm_register_everything');
 
 function sm_enqueue_post_editor_assets()
 {
-    $screen = get_current_screen();
+    $screen = function_exists('get_current_screen') ? get_current_screen() : null;
 
-    // Check if we're in the block editor (post edit screen)
-    if (! $screen || ($screen->base !== 'post' && $screen->base !== 'site-editor')) {
+    // If we have a screen object, limit to post edit/site editor screens.
+    // If screen is not available at this hook, continue and enqueue (Gutenberg may still be active).
+    if ($screen && ($screen->base !== 'post' && $screen->base !== 'site-editor')) {
         return;
     }
 
-    // Only enqueue for post types that support series
-    if ($screen->post_type && ! in_array($screen->post_type, ['post', 'page'])) {
+    // Only enqueue for post types that support series when screen is available
+    if ($screen && $screen->post_type && ! in_array($screen->post_type, ['post', 'page'])) {
         return;
     }
 

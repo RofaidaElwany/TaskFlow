@@ -39,11 +39,12 @@ class SM_Series_Block_Render
             foreach ($terms as $term) {
                 // Try to get posts ordered by the stored `term_order`.
                 $posts = [];
-                if (isset($term->term_taxonomy_id) && class_exists('SM_Series_Order')) {
-                    $ordered = SM_Series_Order::get_ordered_posts($term->term_taxonomy_id);
+                if (isset($term->term_taxonomy_id)) {
+                    global $wpdb;
+                    $repository = new SeriesRepository($wpdb);
+                    $ordered = $repository->getOrderedPosts($term->term_taxonomy_id);
                     if (! empty($ordered)) {
-                        $post_ids = wp_list_pluck($ordered, 'ID');
-                        $posts = array_map('get_post', $post_ids);
+                        $posts = $ordered;
                     }
                 }
 

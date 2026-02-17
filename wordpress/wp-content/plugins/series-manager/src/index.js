@@ -157,9 +157,6 @@ const SortableItem = ({ id, post, onDelete }) => {
         </div>,
         document.body
     )}
-
-    {/* New series modal moved to SeriesSidebar */}
-
     </>
   );
 };
@@ -198,6 +195,11 @@ const SeriesSidebar = () => {
     };
   }, []);
 
+  // Debug: log fetch state for diagnosing missing terms
+  useEffect(() => {
+    console.log('SM Series - isResolvingTerms:', isResolvingTerms, 'seriesTerms count:', (seriesTerms || []).length, seriesTerms);
+  }, [isResolvingTerms, seriesTerms]);
+
   /* =========================
      Fetch posts
   ========================= */
@@ -213,33 +215,39 @@ const SeriesSidebar = () => {
     });
 
     fetch(window.SMSeries.ajaxurl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData.toString(),
-    })
-      .then(res => res.json())
-      .then(({ success, data }) => {
-        if (!success) return;
+  method: 'POST',
+  headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+  body: formData.toString(),
+})
+  .then(res => res.json())
+  .then((response) => {
+    if (!response?.success) {
+      console.warn('Failed to fetch series posts', response);
+      setOrderedPosts([]);
+      return;
+    }
 
-        const currentId = Number(postId);
-        let posts = data || [];
+    const data = response.data || [];
+    const currentId = Number(postId);
+    let posts = data.map(p => ({
+      ...p,
+      isCurrent: Number(p.id) === currentId,
+    }));
 
-        posts = posts.map(p => ({
-          ...p,
-          isCurrent: Number(p.id) === currentId,
-        }));
-
-        const exists = posts.find(p => Number(p.id) === currentId);
-
-        if (!exists) {
-          posts.push({
-            id: currentId,
-            title: { rendered: postTitle || 'Current Post' },
-            isCurrent: true,
-          });
-        }
-        setOrderedPosts(posts);
+    if (!posts.find(p => Number(p.id) === currentId)) {
+      posts.push({
+        id: currentId,
+        title: { rendered: postTitle || 'Current Post' },
+        isCurrent: true,
       });
+    }
+
+    setOrderedPosts(posts);
+  })
+  .catch((err) => {
+    console.error('Error fetching series posts:', err);
+    setOrderedPosts([]);
+  });
   }, [selectedSeriesId, postId, postTitle]);
   const onChangeSeries = (seriesId) => {
     editPost({ series: seriesId ? [Number(seriesId)] : [] });
@@ -316,25 +324,29 @@ const SeriesSidebar = () => {
     setOrderedPosts(updatedPosts);
     saveOrderToDB(updatedPosts);
   };
-
   /* =========================
       add new series
   ========================= */
-  
-  const createNewSeries = async () => {
-  const newTerm = await wp.data.dispatch('core').saveEntityRecord(
-    'taxonomy',
-    'series',
-    {
-      name: newSeriesName,
+const createNewSeries = async () => {
+  try {
+    const newTerm = await wp.data.dispatch('core').saveEntityRecord(
+      'taxonomy',
+      'series',
+      { name: newSeriesName }
+    );
+
+    setIsNewSeriesModalOpen(false);
+    setNewSeriesName('');
+
+    if (newTerm && newTerm.id) {
+      onChangeSeries(newTerm.id);
+    } else {
+      console.warn('Failed to create series. Response:', newTerm);
     }
-  );
-
-  setIsNewSeriesModalOpen(false);
-  setNewSeriesName('');
-
-  if (newTerm?.id) {
-    onChangeSeries(newTerm.id);
+  } catch (err) {
+    console.error('Error creating new series:', err);
+    setIsNewSeriesModalOpen(false);
+    setNewSeriesName('');
   }
 };
 
@@ -347,7 +359,7 @@ const SeriesSidebar = () => {
         <div className="-mx-4">
           {isResolvingTerms && <Spinner />}
 
-          {!isResolvingTerms && seriesTerms?.length > 0 && (
+          {!isResolvingTerms && (
             <div>
               <label className="block text-xs font-bold uppercase text-gray-500 mb-2">
                 Series
