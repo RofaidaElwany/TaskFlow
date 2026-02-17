@@ -15,8 +15,20 @@ require_once __DIR__ . '/includes/class-series-taxonomy.php';
 require_once __DIR__ . '/includes/class-series-taxonomy-edit.php';
 require_once __DIR__ . '/includes/class-series-order.php';
 require_once __DIR__ . '/includes/class-series-block-render.php';
+require_once 'includes/Repository/SeriesRepository.php';
+require_once 'includes/Service/SeriesService.php';
+require_once 'includes/Helpers/SeriesFormatter.php';
+require_once 'includes/Controller/SeriesController.php';
 
 
+
+global $wpdb;
+
+$repository = new SeriesRepository($wpdb);
+$service    = new SeriesService();
+$formatter  = new SeriesFormatter();
+
+new SeriesController($repository, $service, $formatter);
 // Register AJAX handlers early (before admin_init)
 SM_Series_Order::register();
 
