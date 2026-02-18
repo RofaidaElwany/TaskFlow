@@ -1,5 +1,7 @@
 <?php
 
+namespace includes\Service;
+
 class SeriesService
 {
     public function parsePostIds(string $postIdsString): array
