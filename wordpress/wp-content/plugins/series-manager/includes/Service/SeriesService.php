@@ -1,6 +1,6 @@
 <?php
 
-namespace includes\Service;
+namespace Service;
 
 class SeriesService
 {

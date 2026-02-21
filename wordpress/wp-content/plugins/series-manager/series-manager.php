@@ -18,6 +18,7 @@ require_once __DIR__ . '/includes/Controller/SeriesController.php';
 require_once __DIR__ . '/includes/class-series-taxonomy.php';
 require_once __DIR__ . '/includes/class-series-taxonomy-edit.php';
 require_once __DIR__ . '/includes/class-series-block-render.php';
+use Service\SeriesService;
 
 
 /* ========= INIT FUNCTION ========= */
@@ -28,7 +29,7 @@ function sm_series_manager_init()
     global $wpdb;
 
     $repository = new SeriesRepository($wpdb);
-    $service    = new SeriesService();
+    $service = new SeriesService();
     $formatter  = new SeriesFormatter();
 
     new SeriesController($repository, $service, $formatter);

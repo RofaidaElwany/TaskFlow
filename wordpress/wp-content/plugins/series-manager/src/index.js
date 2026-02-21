@@ -5,6 +5,14 @@ import { useSelect, useDispatch } from '@wordpress/data';
 import { useState, useEffect,createPortal } from '@wordpress/element';
 import './index.css';
 
+
+import {
+  prepareOrderedPosts,
+  reorderPosts,
+  removePostFromList
+} from './utils/postHelpers';
+
+
 /* =========================
    DnD Kit imports
 ========================= */
@@ -229,20 +237,16 @@ const SeriesSidebar = () => {
 
     const data = response.data || [];
     const currentId = Number(postId);
-    let posts = data.map(p => ({
-      ...p,
-      isCurrent: Number(p.id) === currentId,
-    }));
 
-    if (!posts.find(p => Number(p.id) === currentId)) {
-      posts.push({
-        id: currentId,
-        title: { rendered: postTitle || 'Current Post' },
-        isCurrent: true,
-      });
-    }
+    //new helper function to prepare posts with current post included and isCurrent flag
+    const preparedPosts = prepareOrderedPosts(
+      data,
+      postId,
+      postTitle
+    );
 
-    setOrderedPosts(posts);
+    setOrderedPosts(preparedPosts);
+
   })
   .catch((err) => {
     console.error('Error fetching series posts:', err);
@@ -268,11 +272,15 @@ const SeriesSidebar = () => {
 
     if (!over || active.id === over.id) return;
 
-    const oldIndex = orderedPosts.findIndex(p => p.id === active.id);
-    const newIndex = orderedPosts.findIndex(p => p.id === over.id);
-    const newPosts = arrayMove(orderedPosts, oldIndex, newIndex);
-    setOrderedPosts(newPosts);
-    saveOrderToDB(newPosts);
+    const newPosts = reorderPosts(
+    orderedPosts,
+    active.id,
+    over.id
+  );
+
+  setOrderedPosts(newPosts);
+  saveOrderToDB(newPosts);
+
   };
 
   const handleDragCancel = () => { // 🔹 ADDED
@@ -320,7 +328,7 @@ const SeriesSidebar = () => {
      Handle delete post from series
   ========================= */
   const handleDeletePost = (postToDelete) => {
-    const updatedPosts = orderedPosts.filter(p => p.id !== postToDelete.id);
+    const updatedPosts = removePostFromList(orderedPosts, postToDelete.id);
     setOrderedPosts(updatedPosts);
     saveOrderToDB(updatedPosts);
   };

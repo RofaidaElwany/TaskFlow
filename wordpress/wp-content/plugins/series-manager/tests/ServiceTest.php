@@ -1,7 +1,7 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use includes\Service\SeriesService;
+use Service\SeriesService;
 
 class ServiceTest extends TestCase{
     public function testParsePostIds()
