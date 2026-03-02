@@ -110,4 +110,4 @@ const SortableItem = ({ id, post, onDelete }) => {
   );
 };
 
-export default SortableItem;
+export { SortableItem };

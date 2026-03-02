@@ -17,4 +17,4 @@ const DragOverlayItem = ({ post }) => {
   );
 };
 
-export default DragOverlayItem;
+export { DragOverlayItem };

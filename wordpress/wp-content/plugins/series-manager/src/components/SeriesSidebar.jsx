@@ -17,15 +17,16 @@ import {
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
 
-import SortableItem from './SortableItem';
-import DragOverlayItem from './DragOverlayItem';
+import { SortableItem } from './SortableItem';
+import { DragOverlayItem } from './DragOverlayItem';
 
 import { useSeriesPosts } from '../hooks/useSeriesPosts';
 import { useSeriesTerms } from '../hooks/useSeriesTerms';
 import { usePostSavingSync } from '../hooks/usePostSavingSync';
 
 import { reorderPosts, removePostFromList } from '../utils/postHelpers';
-import { updateSeriesOrder, createSeriesTerm } from '../services/seriesApi';
+import { createSeriesTerm } from '../services/seriesApiExports';
+import { updateSeriesOrder } from '../services/seriesApiExports';
 
 const SeriesSidebar = () => {
   /* =========================
@@ -49,7 +50,7 @@ const SeriesSidebar = () => {
   const { seriesTerms, isResolvingTerms } = useSeriesTerms();
 
   /* =========================
-     Posts Hook
+    Posts Hook
   ========================= */
   const { orderedPosts, setOrderedPosts } =
     useSeriesPosts(selectedSeriesId, postId, postTitle);
@@ -132,6 +133,7 @@ const SeriesSidebar = () => {
   ========================= */
   const createNewSeries = async () => {
     try {
+      
       const newTerm = await createSeriesTerm(newSeriesName);
 
       setIsNewSeriesModalOpen(false);
@@ -274,4 +276,5 @@ const SeriesSidebar = () => {
   );
 };
 
-export default SeriesSidebar;
+export { SeriesSidebar };
+

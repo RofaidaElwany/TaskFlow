@@ -1,5 +1,5 @@
 import { registerPlugin } from '@wordpress/plugins';
-import SeriesSidebar from '../components/SeriesSidebar';
+import { SeriesSidebar } from '../components/SeriesSidebar';
 
 export const registerSeriesPlugin = () => {
   if (!window.smSeriesSidebarRegistered) {

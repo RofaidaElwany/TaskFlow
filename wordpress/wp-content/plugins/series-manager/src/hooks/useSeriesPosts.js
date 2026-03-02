@@ -1,6 +1,6 @@
 import { useState, useEffect } from '@wordpress/element';
-import { fetchSeriesPosts } from '../services/seriesApi';
 import { prepareOrderedPosts } from '../utils/postHelpers';
+import { fetchSeriesPosts } from "../services/seriesApiExports";
 
 export const useSeriesPosts = (
   selectedSeriesId,
