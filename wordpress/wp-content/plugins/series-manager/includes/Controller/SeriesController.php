@@ -31,6 +31,10 @@ class SeriesController
         }
 
         $nonce = $_POST['nonce'] ?? '';
+
+        error_log('[SeriesController] Received nonce: ' . var_export($nonce, true));
+        error_log('[SeriesController] wp_verify_nonce result: ' . var_export(wp_verify_nonce($nonce, 'sm_series_nonce'), true));
+
         if (! wp_verify_nonce($nonce, 'sm_series_nonce')) {
             wp_send_json_error(['message' => 'Invalid nonce']);
         }

@@ -13,6 +13,8 @@ export const createSeriesApi = ({
       term_id: termId,
     });
 
+
+
     const res = await fetchFn(ajaxurl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },

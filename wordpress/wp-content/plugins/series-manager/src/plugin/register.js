@@ -1,10 +1,10 @@
 import { registerPlugin } from '@wordpress/plugins';
-import { SeriesSidebar } from '../components/SeriesSidebar';
+import { SeriesSidebarContainer } from '../components/seriesSidebar/SeriesSidebarContainer';
 
 export const registerSeriesPlugin = () => {
   if (!window.smSeriesSidebarRegistered) {
     registerPlugin('sm-series-sidebar', {
-      render: SeriesSidebar,
+      render: SeriesSidebarContainer,
     });
 
     window.smSeriesSidebarRegistered = true;

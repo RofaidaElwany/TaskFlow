@@ -18,6 +18,7 @@ require_once __DIR__ . '/includes/Controller/SeriesController.php';
 require_once __DIR__ . '/includes/class-series-taxonomy.php';
 require_once __DIR__ . '/includes/class-series-taxonomy-edit.php';
 require_once __DIR__ . '/includes/class-series-block-render.php';
+
 use Service\SeriesService;
 
 
@@ -101,11 +102,13 @@ function sm_enqueue_post_editor_assets()
     }
 
     // Localize the script with AJAX data
+    $nonce = wp_create_nonce('sm_series_nonce');
+
     wp_localize_script(
         $script_handle,
         'SMSeries',
         [
-            'nonce'   => wp_create_nonce('sm_series_nonce'),
+            'nonce'   => $nonce,
             'ajaxurl' => admin_url('admin-ajax.php'),
         ]
     );
