@@ -15,7 +15,6 @@ from '@dnd-kit/sortable';
 import { useState } from '@wordpress/element';
 import { SortableItem  }from './SortableItem';
 import { DragOverlayItem } from './DragOverlayItem';
-import '@testing-library/jest-dom';
 import '../index.css';
 
 
